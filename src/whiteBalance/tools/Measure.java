@@ -48,7 +48,7 @@ public class Measure
         this(ImageLoader.load(filePath));
     }
     
-    public FastQueue<EllipseRotated_F64> findEllipses(int minSize, boolean draw) {
+    public FastQueue<EllipseRotated_F64> findEllipses(boolean draw) {
         GrayU8 input = ConvertBufferedImage.convertFromSingle(image, null, GrayU8.class);
         FastQueue<EllipseRotated_F64> found;
         GrayU8 binary = new GrayU8(input.width, input.height);
@@ -71,6 +71,20 @@ public class Measure
         // Find the contour around the shapes
         found = detector.getFoundEllipses();
         
+        if(draw) {
+            drawEllipses(found, 2);
+//            g2.setStroke(new BasicStroke(2));
+//            g2.setColor(Color.RED);
+//            
+//            for (int i = 0; i < found.size; i++)
+//                VisualizeShapes.drawEllipse(found.get(i), g2);
+        }
+        return found;
+    }
+    
+    public FastQueue<EllipseRotated_F64> findEllipses(int minSize, boolean draw) {
+        FastQueue<EllipseRotated_F64> found = findEllipses(false);
+        
         if(found.size > 4 && minSize > 0) {
             ArrayList<Integer> removeList = new ArrayList<>();
             int count = 0;
@@ -87,13 +101,47 @@ public class Measure
         }
         
         if(draw) {
+            drawEllipses(found, 2);
+//            g2.setStroke(new BasicStroke(2));
+//            g2.setColor(Color.RED);
+//            
+//            for (int i = 0; i < found.size; i++)
+//                VisualizeShapes.drawEllipse(found.get(i), g2);
+        }
+        return found;
+    }
+    
+    public EllipseRotated_F64 findMaxEllipse(boolean draw) {
+        FastQueue<EllipseRotated_F64> found = findEllipses(false);
+        
+        EllipseRotated_F64 ellipse, portal = null;
+        double size, maxSize = -1;
+        for (int i = 0; i < found.size; i++) {
+            ellipse = found.get(i);
+            size = ellipse.a + ellipse.b;
+            
+            if(ellipse.a + ellipse.b > maxSize) {
+                portal = ellipse;
+                maxSize = size;
+            }
+        }
+        
+        if(draw) {
             g2.setStroke(new BasicStroke(2));
             g2.setColor(Color.RED);
             
-            for (int i = 0; i < found.size; i++)
-                VisualizeShapes.drawEllipse(found.get(i), g2);
+            VisualizeShapes.drawEllipse(portal, g2);
         }
-        return found;
+        
+        return portal;
+    }
+    
+    private void drawEllipses(FastQueue<EllipseRotated_F64> ellipses, float strokeWidth) {
+        g2.setStroke(new BasicStroke(strokeWidth));
+        g2.setColor(Color.RED);
+        
+        for (int i = 0; i < ellipses.size; i++)
+            VisualizeShapes.drawEllipse(ellipses.get(i), g2);
     }
     
     public Point2D_F64[] computeCorners(FastQueue<EllipseRotated_F64> ellipses) throws DetectionException {

@@ -1,7 +1,12 @@
 package whiteBalance.tools;
 
 import georegression.struct.shapes.EllipseRotated_F64;
+import java.awt.BasicStroke;
+import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.Graphics2D;
+import java.awt.image.BufferedImage;
 import javafx.geometry.Point3D;
 
 /**
@@ -11,7 +16,8 @@ import javafx.geometry.Point3D;
  */
 public class Navigator 
 {
-    public static Point3D flyToPortal(EllipseRotated_F64 portal, Dimension imgDim) {
+    
+    public Point3D flyToPortal(EllipseRotated_F64 portal, Dimension imgDim) {
         double x_ideal = imgDim.width / 2.0;
         double y_ideal = imgDim.height / 2.0;
         double area_ideal = imgDim.width * imgDim.height * 0.3;
@@ -31,5 +37,36 @@ public class Navigator
          */
         
         return new Point3D(x_err, y_err, z_err);
+    }
+    
+    public Point3D flyToPortal(EllipseRotated_F64 portal, BufferedImage img, boolean draw) {
+        Point3D coords = flyToPortal(portal, new Dimension(img.getWidth(), img.getHeight()));
+        
+        if(draw) {
+            Graphics2D g2 = img.createGraphics();
+            g2.setStroke(new BasicStroke(2));
+            g2.setFont(new Font("Arial", Font.BOLD, 15));
+            
+            //Target
+            g2.setColor(Color.GREEN);
+            g2.drawRect((int) (portal.center.x - portal.b), (int) (portal.center.y - portal.a), (int) portal.b * 2, (int) portal.a * 2);
+            g2.drawLine((int) portal.center.x, 0, (int) portal.center.x, img.getWidth());
+            g2.drawLine(0, (int) portal.center.y, img.getWidth(), (int) portal.center.y);
+            
+            //Center
+            g2.setColor(Color.RED);
+            g2.drawLine(0, img.getHeight() / 2, img.getWidth(), img.getHeight() / 2);
+            g2.drawLine(img.getWidth() / 2, 0, img.getWidth() / 2, img.getHeight());
+            
+            //Error
+            g2.setColor(Color.ORANGE);
+            g2.drawString("x_err=" + coords.getX(), (int) (img.getWidth() / 2 + coords.getX()) + 5, 45);
+            g2.drawLine(img.getWidth() / 2, 50, (int) (img.getWidth() / 2 + coords.getX()), 50);
+            g2.drawString("y_err=" + coords.getY(), 55, (int) (img.getHeight() / 2 + coords.getY()) - 5);
+            g2.drawLine(50, img.getHeight() / 2, 50, (int) (img.getHeight() / 2 + coords.getY()));
+            g2.drawString("z_err=" + coords.getZ(), 25, 25);
+        }
+        
+        return coords;
     }
 }
