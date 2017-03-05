@@ -6,11 +6,11 @@ import georegression.struct.shapes.EllipseRotated_F64;
 import java.awt.image.BufferedImage;
 import javafx.geometry.Point3D;
 import whiteBalance.exceptions.DetectionException;
-import whiteBalance.gui.ImageViewer;
+import gui.ImageViewer;
 import whiteBalance.tools.Calibrator;
 import whiteBalance.tools.ImageLoader;
 import whiteBalance.tools.Measure;
-import whiteBalance.tools.Navigator;
+import navigation.tools.Navigator;
 
 /**
  * main

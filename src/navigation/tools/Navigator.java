@@ -1,4 +1,4 @@
-package whiteBalance.tools;
+package navigation.tools;
 
 import georegression.struct.shapes.EllipseRotated_F64;
 import java.awt.BasicStroke;

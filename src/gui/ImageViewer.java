@@ -1,4 +1,4 @@
-package whiteBalance.gui;
+package gui;
 
 import java.awt.Graphics;
 import java.awt.image.BufferedImage;
