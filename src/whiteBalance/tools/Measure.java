@@ -1,6 +1,7 @@
 package whiteBalance.tools;
 
 import boofcv.alg.filter.binary.BinaryImageOps;
+import boofcv.alg.filter.binary.Contour;
 import boofcv.alg.filter.binary.GThresholdImageOps;
 import boofcv.alg.shapes.ellipse.BinaryEllipseDetector;
 import boofcv.factory.shape.FactoryShapeDetector;
@@ -8,6 +9,7 @@ import boofcv.gui.feature.VisualizeShapes;
 import boofcv.io.image.ConvertBufferedImage;
 import boofcv.struct.image.GrayU8;
 import georegression.struct.point.Point2D_F64;
+import georegression.struct.point.Point2D_I32;
 import georegression.struct.shapes.EllipseRotated_F64;
 import java.awt.BasicStroke;
 import java.awt.Color;
@@ -16,6 +18,7 @@ import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
+import java.util.List;
 import org.ddogleg.struct.FastQueue;
 import whiteBalance.data.WBData;
 import whiteBalance.exceptions.DetectionException;
@@ -32,20 +35,19 @@ public class Measure
     private final Graphics2D g2;
     private GrayU8 filtered;
     
-    public Measure(BufferedImage image, boolean verbose) {
+    public Measure(BufferedImage image) {
         this.detector = FactoryShapeDetector.ellipse(null, GrayU8.class);
-        detector.setVerbose(verbose);
         this.image = image;
         
         g2 = image.createGraphics();
     }
     
-    public Measure(String filePath, int maxSize, boolean verbose) {
-        this(ImageLoader.load(filePath, maxSize), verbose);
+    public Measure(String filePath, int maxSize) {
+        this(ImageLoader.load(filePath, maxSize));
     }
     
-    public Measure(String filePath, boolean verbose) {
-        this(ImageLoader.load(filePath), verbose);
+    public Measure(String filePath) {
+        this(ImageLoader.load(filePath));
     }
     
     public FastQueue<EllipseRotated_F64> findEllipses(boolean draw) {
@@ -64,25 +66,25 @@ public class Measure
         
         // create a binary image by thresholding
 //        ThresholdImageOps.threshold(input, filtered, threshold, true);
-        filtered = GThresholdImageOps.localSauvola(input, filtered, 5, 0.2f, true); //Sauvola
-//        filtered = GThresholdImageOps.localBlockMinMax(input, binary, 10, 1.0, true, 15 ); //Block
-//        filtered = GThresholdImageOps.localGaussian(input, binary, 42, 1.0, true, null, null); //Gaussian
-//        filtered = GThresholdImageOps.localSquare(input, binary, 28, 1.0, true, null, null); //Square
+//        filtered = GThresholdImageOps.localSauvola(input, filtered, 5, 0.30f, true); //Sauvola
+//        filtered = GThresholdImageOps.localBlockMinMax(input, binary, 5, 0.48, true, 5); //Block
+        filtered = GThresholdImageOps.localGaussian(input, binary, 75, 0.35, true, null, null); //Gaussian
+//        filtered = GThresholdImageOps.localSquare(input, binary, 75, .35, true, null, null); //Square
         
         // it takes in a grey scale image and binary image
         // the binary image is used to do a crude polygon fit, then the grey image is used to refine the lines
         // using a sub-pixel algorithm
         detector.process(input, filtered);
-//        List<Contour> contours = detector.getAllContours();
-//        g2.setStroke(new BasicStroke(1));
-//        for (Contour contour : contours) {
-//            g2.setColor(Color.BLUE);
-//            VisualizeShapes.drawPolygon(contour.external, true, g2);
-//            g2.setColor(Color.GREEN);
-//            for (List<Point2D_I32> internal : contour.internal) {
-//                VisualizeShapes.drawPolygon(internal, true, g2);
-//            }
-//        }
+        List<Contour> contours = detector.getAllContours();
+        g2.setStroke(new BasicStroke(1));
+        for (Contour contour : contours) {
+            g2.setColor(Color.BLUE);
+            VisualizeShapes.drawPolygon(contour.external, true, g2);
+            g2.setColor(Color.GREEN);
+            for (List<Point2D_I32> internal : contour.internal) {
+                VisualizeShapes.drawPolygon(internal, true, g2);
+            }
+        }
         
         // Find the contour around the shapes
         found = detector.getFoundEllipses();
@@ -118,7 +120,7 @@ public class Measure
     }
     
     public EllipseRotated_F64 findMaxEllipse(boolean draw) {
-        FastQueue<EllipseRotated_F64> found = findEllipses(false);
+        FastQueue<EllipseRotated_F64> found = findEllipses(true);
         
         EllipseRotated_F64 ellipse, portal = null;
         double size, maxSize = -1;

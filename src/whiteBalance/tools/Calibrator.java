@@ -22,17 +22,17 @@ public class Calibrator
     
     public Calibrator(BufferedImage image, boolean verbose) {
         this.verbose = verbose;
-        measure = new Measure(image, verbose);
+        measure = new Measure(image);
     }
     
     public Calibrator(String filePath, boolean verbose) {
         this.verbose = verbose;
-        measure = new Measure(filePath, verbose);
+        measure = new Measure(filePath);
     }
     
     public Calibrator(String filePath, int imageMaxSize, boolean verbose) {
         this.verbose = verbose;
-        measure = new Measure(filePath, imageMaxSize, verbose);
+        measure = new Measure(filePath, imageMaxSize);
     }
     
     public Integer[] calibrate(int ellipseMinSize) throws DetectionException {

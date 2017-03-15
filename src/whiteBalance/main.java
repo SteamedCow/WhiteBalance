@@ -74,10 +74,9 @@ public class main
             }
             
             BufferedImage img = ImageLoader.load(filePath + fileName, 900);
-            Measure ms = new Measure(img, true);
+            Measure ms = new Measure(img);
             
             EllipseRotated_F64 portal = ms.findMaxEllipse(true);
-//            ms.findEllipses(true);
             
             Point3D coordsToPortal = new Navigator().flyToPortal(portal, img, true);
             System.out.println(coordsToPortal);
