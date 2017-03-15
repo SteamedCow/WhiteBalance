@@ -2,7 +2,6 @@ package whiteBalance.tools;
 
 import boofcv.alg.filter.binary.BinaryImageOps;
 import boofcv.alg.filter.binary.GThresholdImageOps;
-import boofcv.alg.filter.binary.ThresholdImageOps;
 import boofcv.alg.shapes.ellipse.BinaryEllipseDetector;
 import boofcv.factory.shape.FactoryShapeDetector;
 import boofcv.gui.feature.VisualizeShapes;
@@ -33,52 +32,64 @@ public class Measure
     private final Graphics2D g2;
     private GrayU8 filtered;
     
-    public Measure(BufferedImage image) {
+    public Measure(BufferedImage image, boolean verbose) {
         this.detector = FactoryShapeDetector.ellipse(null, GrayU8.class);
+        detector.setVerbose(verbose);
         this.image = image;
         
         g2 = image.createGraphics();
     }
     
-    public Measure(String filePath, int maxSize) {
-        this(ImageLoader.load(filePath, maxSize));
+    public Measure(String filePath, int maxSize, boolean verbose) {
+        this(ImageLoader.load(filePath, maxSize), verbose);
     }
     
-    public Measure(String filePath) {
-        this(ImageLoader.load(filePath));
+    public Measure(String filePath, boolean verbose) {
+        this(ImageLoader.load(filePath), verbose);
     }
     
     public FastQueue<EllipseRotated_F64> findEllipses(boolean draw) {
+//        GrayU8 input = ConvertBufferedImage.convertFromSingle(image, null, GrayU8.class);
         GrayU8 input = ConvertBufferedImage.convertFromSingle(image, null, GrayU8.class);
         FastQueue<EllipseRotated_F64> found;
-        GrayU8 binary = new GrayU8(input.width, input.height);
+//        GrayU8 binary = new GrayU8(input.width, input.height);
+        GrayU8 binary = new GrayU8(input.width,input.height);
         
         // reduce noise with some filtering
         filtered = BinaryImageOps.erode8(binary, 1, null);
         filtered = BinaryImageOps.dilate8(filtered, 1, null);
         
         // the mean pixel value is often a reasonable threshold when creating a binary image
-        int threshold = GThresholdImageOps.computeOtsu(input, 0, 255);
+//        int threshold = GThresholdImageOps.computeOtsu(input, 0, 255);
         
         // create a binary image by thresholding
-        ThresholdImageOps.threshold(input, filtered, threshold, true);
+//        ThresholdImageOps.threshold(input, filtered, threshold, true);
+        filtered = GThresholdImageOps.localSauvola(input, filtered, 5, 0.2f, true); //Sauvola
+//        filtered = GThresholdImageOps.localBlockMinMax(input, binary, 10, 1.0, true, 15 ); //Block
+//        filtered = GThresholdImageOps.localGaussian(input, binary, 42, 1.0, true, null, null); //Gaussian
+//        filtered = GThresholdImageOps.localSquare(input, binary, 28, 1.0, true, null, null); //Square
         
         // it takes in a grey scale image and binary image
         // the binary image is used to do a crude polygon fit, then the grey image is used to refine the lines
         // using a sub-pixel algorithm
         detector.process(input, filtered);
+//        List<Contour> contours = detector.getAllContours();
+//        g2.setStroke(new BasicStroke(1));
+//        for (Contour contour : contours) {
+//            g2.setColor(Color.BLUE);
+//            VisualizeShapes.drawPolygon(contour.external, true, g2);
+//            g2.setColor(Color.GREEN);
+//            for (List<Point2D_I32> internal : contour.internal) {
+//                VisualizeShapes.drawPolygon(internal, true, g2);
+//            }
+//        }
         
         // Find the contour around the shapes
         found = detector.getFoundEllipses();
         
-        if(draw) {
+        if(draw)
             drawEllipses(found, 2);
-//            g2.setStroke(new BasicStroke(2));
-//            g2.setColor(Color.RED);
-//            
-//            for (int i = 0; i < found.size; i++)
-//                VisualizeShapes.drawEllipse(found.get(i), g2);
-        }
+        
         return found;
     }
     
@@ -102,11 +113,6 @@ public class Measure
         
         if(draw) {
             drawEllipses(found, 2);
-//            g2.setStroke(new BasicStroke(2));
-//            g2.setColor(Color.RED);
-//            
-//            for (int i = 0; i < found.size; i++)
-//                VisualizeShapes.drawEllipse(found.get(i), g2);
         }
         return found;
     }
@@ -130,7 +136,8 @@ public class Measure
             g2.setStroke(new BasicStroke(2));
             g2.setColor(Color.RED);
             
-            VisualizeShapes.drawEllipse(portal, g2);
+            if(portal != null)
+                VisualizeShapes.drawEllipse(portal, g2);
         }
         
         return portal;
@@ -281,6 +288,10 @@ public class Measure
         int avgB = (int) (sumb / num);
         
         return new Color(avgR, avgG, avgB);
+    }
+
+    public void setImage(BufferedImage image) {
+        this.image = image;
     }
     
     public BufferedImage getImage() {
