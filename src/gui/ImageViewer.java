@@ -27,7 +27,7 @@ public class ImageViewer extends JFrame
         
         setTitle(title);
         setDefaultCloseOperation(dco);
-        setSize(img.getWidth(), img.getHeight());
+        setSize(img.getWidth() + 16, img.getHeight() + 39);
         
         setContentPane(new JPanel() {
             @Override
