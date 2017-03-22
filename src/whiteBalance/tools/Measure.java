@@ -82,9 +82,9 @@ public class Measure
         
         boolean isCircle;
         for (Contour contour : contours) {
-            g2.setColor(Color.BLUE);
-            g2.setStroke(new BasicStroke());
-            VisualizeShapes.drawPolygon(contour.external, true, g2);
+//            g2.setColor(Color.BLUE);
+//            g2.setStroke(new BasicStroke());
+//            VisualizeShapes.drawPolygon(contour.external, true, g2);
             //Bestem om dette er en oval!
             
             //Find centrum
@@ -104,29 +104,30 @@ public class Measure
                 g2.setColor(Color.GREEN);
                 g2.setStroke(new BasicStroke(2));
                 
-                System.out.println("\nlist size = " + contour.external.size());
-                System.out.println("avgError = " + avgErr);
-                System.out.println("facError = " + avgErr / radius);
+//                System.out.println("\nlist size = " + contour.external.size());
+//                System.out.println("avgError = " + avgErr);
+//                System.out.println("facError = " + avgErr / radius);
                 
-                System.out.println("Center = " + center);
-                g2.fillOval(center.x-2, center.y-2, 4, 4);
-                g2.drawString("Center", center.x, center.y + 1);
+//                System.out.println("Center = " + center);
+//                g2.fillOval(center.x-2, center.y-2, 4, 4);
+//                g2.drawString("Center", center.x, center.y + 1);
                 
-                System.out.println("Radius (avg) = " + radius);
-                g2.drawLine(center.x, center.y, (int) (center.x + radius), center.y);
-                g2.drawString("Radius", (int) (center.x + radius), center.y + 1);
+//                System.out.println("Radius (avg) = " + radius);
+//                g2.drawLine(center.x, center.y, (int) (center.x + radius), center.y);
+//                g2.drawString("Radius", (int) (center.x + radius), center.y + 1);
                 
                 g2.drawOval((int) (center.x - radius), (int) (center.y - radius), (int) radius * 2, (int) radius * 2);
             }
         }
         
         // Find the contour around the shapes
-        found = detector.getFoundEllipses();
+//        found = detector.getFoundEllipses();
         
-        if(draw)
-            drawEllipses(found, 2);
+//        if(draw)
+//            drawEllipses(found, 2);
         
-        return found;
+        return null;
+//        return found;
     }
     
     private DFMPoint2D_I32 findCenter(List<Point2D_I32> contour) {
