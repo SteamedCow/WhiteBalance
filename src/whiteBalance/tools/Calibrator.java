@@ -42,7 +42,7 @@ public class Calibrator
         //Find ellipses (over ellipseMinSize)
         if(verbose)
             System.out.println("Finding ellipses..");
-        FastQueue<EllipseRotated_F64> ellipses = measure.findEllipses(ellipseMinSize, true);
+        FastQueue<EllipseRotated_F64> ellipses = measure.findEllipses(ellipseMinSize, true, 0.165);
         if(verbose)
             System.out.println("    Found " + ellipses.size + " items: " + Arrays.toString(ellipses.getData()));
         

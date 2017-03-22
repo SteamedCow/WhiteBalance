@@ -22,6 +22,7 @@ import java.util.List;
 import org.ddogleg.struct.FastQueue;
 import whiteBalance.data.WBData;
 import whiteBalance.exceptions.DetectionException;
+import whiteBalance.tools.geom.DFMPoint2D_I32;
 
 /**
  * Measure
@@ -50,7 +51,7 @@ public class Measure
         this(ImageLoader.load(filePath));
     }
     
-    public FastQueue<EllipseRotated_F64> findEllipses(boolean draw) {
+    public FastQueue<EllipseRotated_F64> findEllipses(boolean draw, double threshhold) {
 //        GrayU8 input = ConvertBufferedImage.convertFromSingle(image, null, GrayU8.class);
         GrayU8 input = ConvertBufferedImage.convertFromSingle(image, null, GrayU8.class);
         FastQueue<EllipseRotated_F64> found;
@@ -68,7 +69,7 @@ public class Measure
 //        ThresholdImageOps.threshold(input, filtered, threshold, true);
 //        filtered = GThresholdImageOps.localSauvola(input, filtered, 5, 0.30f, true); //Sauvola
 //        filtered = GThresholdImageOps.localBlockMinMax(input, binary, 5, 0.48, true, 5); //Block
-        filtered = GThresholdImageOps.localGaussian(input, binary, 75, 0.35, true, null, null); //Gaussian
+        filtered = GThresholdImageOps.localGaussian(input, binary, 15, 0.4, true, null, null); //Gaussian
 //        filtered = GThresholdImageOps.localSquare(input, binary, 75, .35, true, null, null); //Square
         
         // it takes in a grey scale image and binary image
@@ -77,12 +78,45 @@ public class Measure
         detector.process(input, filtered);
         List<Contour> contours = detector.getAllContours();
         g2.setStroke(new BasicStroke(1));
-        for (Contour contour : contours) {
         g2.setColor(Color.BLUE);
+        
+        boolean isCircle;
+        for (Contour contour : contours) {
+            g2.setColor(Color.BLUE);
+            g2.setStroke(new BasicStroke());
             VisualizeShapes.drawPolygon(contour.external, true, g2);
-            g2.setColor(Color.GREEN);
-            for (List<Point2D_I32> internal : contour.internal) {
-                VisualizeShapes.drawPolygon(internal, true, g2);
+            //Bestem om dette er en oval!
+            
+            //Find centrum
+            Point2D_I32 center = findCenter(contour.external);
+            
+            //Find avg radius, minor og major
+            double radius = findAverageDistance(contour.external, center);
+            
+            //Find gennemsnitlig afvigelse fra cirkel/ellipse
+            double avgErr = findAverageErrorCircle(contour.external, center, radius);
+            
+            //Determine if the group is a circle
+            isCircle = avgErr / radius < threshhold;
+            
+            if(isCircle) {
+                //Tegn svar
+                g2.setColor(Color.GREEN);
+                g2.setStroke(new BasicStroke(2));
+                
+                System.out.println("\nlist size = " + contour.external.size());
+                System.out.println("avgError = " + avgErr);
+                System.out.println("facError = " + avgErr / radius);
+                
+                System.out.println("Center = " + center);
+                g2.fillOval(center.x-2, center.y-2, 4, 4);
+                g2.drawString("Center", center.x, center.y + 1);
+                
+                System.out.println("Radius (avg) = " + radius);
+                g2.drawLine(center.x, center.y, (int) (center.x + radius), center.y);
+                g2.drawString("Radius", (int) (center.x + radius), center.y + 1);
+                
+                g2.drawOval((int) (center.x - radius), (int) (center.y - radius), (int) radius * 2, (int) radius * 2);
             }
         }
         
@@ -95,8 +129,44 @@ public class Measure
         return found;
     }
     
-    public FastQueue<EllipseRotated_F64> findEllipses(int minSize, boolean draw) {
-        FastQueue<EllipseRotated_F64> found = findEllipses(false);
+    private DFMPoint2D_I32 findCenter(List<Point2D_I32> contour) {
+        DFMPoint2D_I32 sum = new DFMPoint2D_I32();
+        for (Point2D_I32 p : contour)
+            sum.addSave(p);
+        
+        return sum.divide(contour.size());
+    }
+    
+    private double findAverageDistance(List<Point2D_I32> contour, Point2D_I32 center) {
+        double radius = 0;
+        for (Point2D_I32 p : contour)
+            radius += p.distance(center);
+        
+        return radius / contour.size();
+    }
+    
+    private double findAverageErrorCircle(List<Point2D_I32> contour, Point2D_I32 center, double radius) {
+        Point2D_I32 expP1, expP2;
+        double err, sumErr = 0, expY1, expY2;
+        
+        for (Point2D_I32 p : contour) {
+            expY1 = Math.sqrt(radius*radius - p.x*p.x + 2*center.x*p.x - center.x*center.x) + center.y;
+            expY2 = -(Math.sqrt(radius*radius - p.x*p.x + 2*center.x*p.x - center.x*center.x) - center.y);
+            expP1 = new Point2D_I32(p.x, (int) expY1);
+            expP2 = new Point2D_I32(p.x, (int) expY2);
+            
+            if(p.distance(expP1) < p.distance(expP2))
+                err = p.distance(expP1);
+            else
+                err = p.distance(expP2);
+            
+            sumErr += err;
+        }
+        return sumErr / contour.size();
+    }
+    
+    public FastQueue<EllipseRotated_F64> findEllipses(int minSize, boolean draw, double threshhold) {
+        FastQueue<EllipseRotated_F64> found = findEllipses(false, threshhold);
         
         if(found.size > 4 && minSize > 0) {
             ArrayList<Integer> removeList = new ArrayList<>();
@@ -119,8 +189,8 @@ public class Measure
         return found;
     }
     
-    public EllipseRotated_F64 findMaxEllipse(boolean draw) {
-        FastQueue<EllipseRotated_F64> found = findEllipses(true);
+    public EllipseRotated_F64 findMaxEllipse(boolean draw, double threshhold) {
+        FastQueue<EllipseRotated_F64> found = findEllipses(true, threshhold);
         
         EllipseRotated_F64 ellipse, portal = null;
         double size, maxSize = -1;

@@ -14,8 +14,6 @@ import georegression.struct.shapes.EllipseRotated_F64;
 import java.awt.image.BufferedImage;
 import whiteBalance.exceptions.DetectionException;
 import gui.ImageViewer;
-import javafx.geometry.Point3D;
-import navigation.tools.Navigator;
 import whiteBalance.tools.Calibrator;
 import whiteBalance.tools.ImageLoader;
 import whiteBalance.tools.Measure;
@@ -28,10 +26,11 @@ import whiteBalance.tools.Measure;
 public class main
 {
     public static void main(String[] args) throws DetectionException {
-        int run = 3;
+        int run = 4;
         boolean calibrate = false;
         int minSize = 3, imgMaxSize = 1000;
-        String filePath = "D:\\Programmer\\NetBeans 8.0.2\\My Javas\\CDIO\\White Balance\\White Balance\\";
+        double threshhold = 0.3; //0.165;
+        String filePath = "D:\\Programmer\\NetBeans\\My Javas\\CDIO\\WhiteBalance\\";
         
         String fileName;
         
@@ -66,20 +65,23 @@ public class main
                 case 1: fileName = "20170224_121451.jpg"; break;
                 case 2: fileName = "20170315_091300.jpg"; break;
                 case 3: fileName = "20170315_091305.jpg"; break;
-                case 4: fileName = ".jpg"; break;
-                case 5: fileName = ".jpg"; break;
-                case 6: fileName = ".jpg"; break;
-                case 7: fileName = ".jpg"; break;
-                case 8: fileName = ".jpg"; break;
+                case 4: fileName = "20170315_091305 (redigeret).jpg"; break;
+                case 5: fileName = "circle.jpg"; break;
+                case 6: fileName = "ellipse.jpg"; break;
+                case 7: fileName = "square.jpg"; break;
+                case 8: fileName = "star.jpg"; break;
+                case 9: fileName = "triangle.jpg"; break;
+                case 10: fileName = "shapes.jpg"; break;
+                case 11: fileName = "20170315_091300 (redigeret).jpg"; break;
             }
             
             BufferedImage img = ImageLoader.load(filePath + fileName, 900);
             Measure ms = new Measure(img);
             
-            EllipseRotated_F64 portal = ms.findMaxEllipse(true);
+            EllipseRotated_F64 portal = ms.findMaxEllipse(true, threshhold);
             
-            Point3D coordsToPortal = new Navigator().flyToPortal(portal, img, true);
-            System.out.println(coordsToPortal);
+//            Point3D coordsToPortal = new Navigator().flyToPortal(portal, img, true);
+//            System.out.println(coordsToPortal);
             ShowImages.showWindow(ms.getBinary(), "Binary", true);
             new ImageViewer("Navigator", ImageViewer.CloseOperation.EXIT, img).show();
             
