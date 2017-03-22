@@ -78,7 +78,7 @@ public class Measure
         List<Contour> contours = detector.getAllContours();
         g2.setStroke(new BasicStroke(1));
         for (Contour contour : contours) {
-            g2.setColor(Color.BLUE);
+        g2.setColor(Color.BLUE);
             VisualizeShapes.drawPolygon(contour.external, true, g2);
             g2.setColor(Color.GREEN);
             for (List<Point2D_I32> internal : contour.internal) {

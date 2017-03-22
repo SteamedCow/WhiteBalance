@@ -127,6 +127,6 @@ public class main
         
         String fileName =  imageName.substring(imageName.lastIndexOf('/')+1);
         ShowImages.showWindow(gui,fileName);
-    }
+}
 
 }
