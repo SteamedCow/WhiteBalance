@@ -26,7 +26,7 @@ import whiteBalance.tools.Measure;
 public class main
 {
     public static void main(String[] args) throws DetectionException {
-        int run = 6;
+        int run = 4;
         boolean calibrate = false;
         int minSize = 3, imgMaxSize = 1000;
         double threshhold = 0.3; //0.165;

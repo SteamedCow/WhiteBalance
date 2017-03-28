@@ -9,7 +9,6 @@ import boofcv.gui.feature.VisualizeShapes;
 import boofcv.io.image.ConvertBufferedImage;
 import boofcv.struct.image.GrayU8;
 import georegression.struct.point.Point2D_F64;
-import georegression.struct.point.Point2D_I32;
 import georegression.struct.shapes.EllipseRotated_F64;
 import java.awt.BasicStroke;
 import java.awt.Color;
@@ -22,7 +21,6 @@ import java.util.List;
 import org.ddogleg.struct.FastQueue;
 import whiteBalance.data.WBData;
 import whiteBalance.exceptions.DetectionException;
-import whiteBalance.tools.geom.DFMPoint2D_I32;
 
 /**
  * Measure
@@ -33,14 +31,14 @@ public class Measure
 {
     private final BinaryEllipseDetector<GrayU8> detector;
     private BufferedImage image;
-    private final Graphics2D g2;
+    private final Graphics2D g;
     private GrayU8 filtered;
     
     public Measure(BufferedImage image) {
         this.detector = FactoryShapeDetector.ellipse(null, GrayU8.class);
         this.image = image;
         
-        g2 = image.createGraphics();
+        g = image.createGraphics();
     }
     
     public Measure(String filePath, int maxSize) {
@@ -77,39 +75,41 @@ public class Measure
         // using a sub-pixel algorithm
         detector.process(input, filtered);
         List<Contour> contours = detector.getAllContours();
-        g2.setStroke(new BasicStroke(1));
-        g2.setColor(Color.BLUE);
+        g.setStroke(new BasicStroke(1));
+        g.setColor(Color.BLUE);
         
         boolean isCircle = false, isEllipse = false;
         EllipseRecognition eReg;
-        CircleRecognition cReg;
+//        CircleRecognition cReg;
         for (Contour contour : contours) {
-            g2.setColor(Color.BLUE);
-            g2.setStroke(new BasicStroke());
-            VisualizeShapes.drawPolygon(contour.external, true, g2);
+            g.setColor(Color.BLUE);
+            g.setStroke(new BasicStroke());
+            VisualizeShapes.drawPolygon(contour.external, true, g);
             
             //Bestem om dette er en oval!
             eReg = new EllipseRecognition();
-            cReg = new CircleRecognition();
+//            cReg = new CircleRecognition();
             
             //Find centrum
 //            Point2D_I32 center = cReg.findCenter(contour.external);
-            Point2D_I32[] centers = eReg.findCenters(contour.external);
+            Point2D_F64[] centers = eReg.findCenters(contour.external);
             
-            g2.setColor(Color.red);
-            if(draw) {
-                for (Point2D_I32 center : centers) {
-                    g2.fillOval(center.x-2, center.y-2, 4, 4);
-                }
-            }
             
             //Find angle
-            double angle = eReg.findAngle(centers);
-            g2.drawString(angle + " deg", centers[0].x, centers[0].y);
+            double angle = eReg.findAngle(centers, true);
             
             //Find avg radius, minor og major
 //            double radius = cReg.findAverageDistance(contour.external, center);
-//            double[] axis = eReg.findMinorMajor(contour.external, centers[0], angle);
+            EllipseRotated_F64 ellipse = eReg.findEllipse(contour.external, centers[0], angle);
+            if(draw) {
+                if((ellipse.a > WBData.MAJOR_MIN || ellipse.b > WBData.MAJOR_MIN) && (ellipse.a > WBData.MINOR_MIN && ellipse.b > WBData.MINOR_MIN)) {
+                    g.setColor(Color.RED);
+                    for (Point2D_F64 center : centers) {
+                        g.fillOval((int) center.x-2, (int) center.y-2, 4, 4);
+                    }
+                    eReg.drawEllipse(ellipse, 2, Color.GREEN, g);
+                }
+            }
             
             //Find gennemsnitlig afvigelse fra cirkel/ellipse
 //            double avgErr = cReg.findAverageError(contour.external, center, radius);
@@ -121,8 +121,8 @@ public class Measure
             
             if(isCircle) {
                 //Tegn svar
-                g2.setColor(Color.GREEN);
-                g2.setStroke(new BasicStroke(2));
+                g.setColor(Color.GREEN);
+                g.setStroke(new BasicStroke(2));
                 
 //                System.out.println("\nlist size = " + contour.external.size());
 //                System.out.println("avgError = " + avgErr);
@@ -191,11 +191,11 @@ public class Measure
             }
             
             if(draw) {
-                g2.setStroke(new BasicStroke(2));
-                g2.setColor(Color.RED);
+                g.setStroke(new BasicStroke(2));
+                g.setColor(Color.RED);
                 
                 if(portal != null)
-                    VisualizeShapes.drawEllipse(portal, g2);
+                    VisualizeShapes.drawEllipse(portal, g);
             }
             return portal;
         }
@@ -203,11 +203,11 @@ public class Measure
     }
     
     private void drawEllipses(FastQueue<EllipseRotated_F64> ellipses, float strokeWidth) {
-        g2.setStroke(new BasicStroke(strokeWidth));
-        g2.setColor(Color.RED);
+        g.setStroke(new BasicStroke(strokeWidth));
+        g.setColor(Color.RED);
         
         for (int i = 0; i < ellipses.size; i++)
-            VisualizeShapes.drawEllipse(ellipses.get(i), g2);
+            VisualizeShapes.drawEllipse(ellipses.get(i), g);
     }
     
     public Point2D_F64[] computeCorners(FastQueue<EllipseRotated_F64> ellipses) throws DetectionException {
@@ -250,15 +250,15 @@ public class Measure
             }
         }
         
-        g2.setStroke(new BasicStroke(3));
-        g2.setColor(Color.GREEN);
+        g.setStroke(new BasicStroke(3));
+        g.setColor(Color.GREEN);
         EllipseRotated_F64 caliPoint;
         for (int i = 0; i < corners.length; i++) {
             caliPoint = corners[i];
             
             cornersCoords[i] = caliPoint.getCenter();
-            g2.drawString("p"+i, (int) caliPoint.getCenter().x, (int) caliPoint.getCenter().y);
-            VisualizeShapes.drawEllipse(caliPoint, g2);
+            g.drawString("p"+i, (int) caliPoint.getCenter().x, (int) caliPoint.getCenter().y);
+            VisualizeShapes.drawEllipse(caliPoint, g);
         }
         
         return cornersCoords;
@@ -302,7 +302,7 @@ public class Measure
             red +=  WBData.wbColors[si].getRed() - avgColor.getRed();
             green +=  WBData.wbColors[si].getGreen() - avgColor.getGreen();
             blue += WBData.wbColors[si].getBlue() - avgColor.getBlue();
-            g2.drawRect(sampleLocation.x - sampleDim.width/2, sampleLocation.y - sampleDim.height/2, sampleDim.width, sampleDim.height);
+            g.drawRect(sampleLocation.x - sampleDim.width/2, sampleLocation.y - sampleDim.height/2, sampleDim.width, sampleDim.height);
         }
         red /= 24;
         green /= 24;
