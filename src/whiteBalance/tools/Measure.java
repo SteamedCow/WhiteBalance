@@ -80,24 +80,44 @@ public class Measure
         g2.setStroke(new BasicStroke(1));
         g2.setColor(Color.BLUE);
         
-        boolean isCircle;
+        boolean isCircle = false, isEllipse = false;
+        EllipseRecognition eReg;
+        CircleRecognition cReg;
         for (Contour contour : contours) {
-//            g2.setColor(Color.BLUE);
-//            g2.setStroke(new BasicStroke());
-//            VisualizeShapes.drawPolygon(contour.external, true, g2);
+            g2.setColor(Color.BLUE);
+            g2.setStroke(new BasicStroke());
+            VisualizeShapes.drawPolygon(contour.external, true, g2);
+            
             //Bestem om dette er en oval!
+            eReg = new EllipseRecognition();
+            cReg = new CircleRecognition();
             
             //Find centrum
-            Point2D_I32 center = findCenter(contour.external);
+//            Point2D_I32 center = cReg.findCenter(contour.external);
+            Point2D_I32[] centers = eReg.findCenters(contour.external);
+            
+            g2.setColor(Color.red);
+            if(draw) {
+                for (Point2D_I32 center : centers) {
+                    g2.fillOval(center.x-2, center.y-2, 4, 4);
+                }
+            }
+            
+            //Find angle
+            double angle = eReg.findAngle(centers);
+            g2.drawString(angle + " deg", centers[0].x, centers[0].y);
             
             //Find avg radius, minor og major
-            double radius = findAverageDistance(contour.external, center);
+//            double radius = cReg.findAverageDistance(contour.external, center);
+//            double[] axis = eReg.findMinorMajor(contour.external, centers[0], angle);
             
             //Find gennemsnitlig afvigelse fra cirkel/ellipse
-            double avgErr = findAverageErrorCircle(contour.external, center, radius);
+//            double avgErr = cReg.findAverageError(contour.external, center, radius);
+//            double avgErr = eReg.findAverageError(contour.external, centers[0], axis, angle);
             
             //Determine if the group is a circle
-            isCircle = avgErr / radius < threshhold;
+//            isCircle = avgErr / radius < threshhold;
+//            isEllipse = avgErr / ((axis[0]+axis[1])/2) < threshhold;
             
             if(isCircle) {
                 //Tegn svar
@@ -116,7 +136,7 @@ public class Measure
 //                g2.drawLine(center.x, center.y, (int) (center.x + radius), center.y);
 //                g2.drawString("Radius", (int) (center.x + radius), center.y + 1);
                 
-                g2.drawOval((int) (center.x - radius), (int) (center.y - radius), (int) radius * 2, (int) radius * 2);
+//                g2.drawOval((int) (center.x - radius), (int) (center.y - radius), (int) radius * 2, (int) radius * 2);
             }
         }
         
@@ -128,42 +148,6 @@ public class Measure
         
         return null;
 //        return found;
-    }
-    
-    private DFMPoint2D_I32 findCenter(List<Point2D_I32> contour) {
-        DFMPoint2D_I32 sum = new DFMPoint2D_I32();
-        for (Point2D_I32 p : contour)
-            sum.addSave(p);
-        
-        return sum.divide(contour.size());
-    }
-    
-    private double findAverageDistance(List<Point2D_I32> contour, Point2D_I32 center) {
-        double radius = 0;
-        for (Point2D_I32 p : contour)
-            radius += p.distance(center);
-        
-        return radius / contour.size();
-    }
-    
-    private double findAverageErrorCircle(List<Point2D_I32> contour, Point2D_I32 center, double radius) {
-        Point2D_I32 expP1, expP2;
-        double err, sumErr = 0, expY1, expY2;
-        
-        for (Point2D_I32 p : contour) {
-            expY1 = Math.sqrt(radius*radius - p.x*p.x + 2*center.x*p.x - center.x*center.x) + center.y;
-            expY2 = -(Math.sqrt(radius*radius - p.x*p.x + 2*center.x*p.x - center.x*center.x) - center.y);
-            expP1 = new Point2D_I32(p.x, (int) expY1);
-            expP2 = new Point2D_I32(p.x, (int) expY2);
-            
-            if(p.distance(expP1) < p.distance(expP2))
-                err = p.distance(expP1);
-            else
-                err = p.distance(expP2);
-            
-            sumErr += err;
-        }
-        return sumErr / contour.size();
     }
     
     public FastQueue<EllipseRotated_F64> findEllipses(int minSize, boolean draw, double threshhold) {
@@ -193,27 +177,29 @@ public class Measure
     public EllipseRotated_F64 findMaxEllipse(boolean draw, double threshhold) {
         FastQueue<EllipseRotated_F64> found = findEllipses(true, threshhold);
         
-        EllipseRotated_F64 ellipse, portal = null;
-        double size, maxSize = -1;
-        for (int i = 0; i < found.size; i++) {
-            ellipse = found.get(i);
-            size = ellipse.a + ellipse.b;
-            
-            if(ellipse.a + ellipse.b > maxSize) {
-                portal = ellipse;
-                maxSize = size;
+        if(found != null) {
+            EllipseRotated_F64 ellipse, portal = null;
+            double size, maxSize = -1;
+            for (int i = 0; i < found.size; i++) {
+                ellipse = found.get(i);
+                size = ellipse.a + ellipse.b;
+                
+                if(ellipse.a + ellipse.b > maxSize) {
+                    portal = ellipse;
+                    maxSize = size;
+                }
             }
-        }
-        
-        if(draw) {
-            g2.setStroke(new BasicStroke(2));
-            g2.setColor(Color.RED);
             
-            if(portal != null)
-                VisualizeShapes.drawEllipse(portal, g2);
+            if(draw) {
+                g2.setStroke(new BasicStroke(2));
+                g2.setColor(Color.RED);
+                
+                if(portal != null)
+                    VisualizeShapes.drawEllipse(portal, g2);
+            }
+            return portal;
         }
-        
-        return portal;
+        return null;
     }
     
     private void drawEllipses(FastQueue<EllipseRotated_F64> ellipses, float strokeWidth) {

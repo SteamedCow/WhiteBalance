@@ -26,11 +26,11 @@ import whiteBalance.tools.Measure;
 public class main
 {
     public static void main(String[] args) throws DetectionException {
-        int run = 4;
+        int run = 6;
         boolean calibrate = false;
         int minSize = 3, imgMaxSize = 1000;
         double threshhold = 0.3; //0.165;
-        String filePath = "D:\\Programmer\\NetBeans\\My Javas\\CDIO\\WhiteBalance\\";
+        String filePath = "D:\\Programmer\\NetBeans 8.0.2\\My Javas\\CDIO\\White Balance\\White Balance\\";
         
         String fileName;
         
