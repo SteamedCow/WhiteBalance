@@ -6,6 +6,7 @@ import boofcv.alg.filter.binary.GThresholdImageOps;
 import boofcv.alg.shapes.ellipse.BinaryEllipseDetector;
 import boofcv.factory.shape.FactoryShapeDetector;
 import boofcv.gui.feature.VisualizeShapes;
+import boofcv.gui.image.ShowImages;
 import boofcv.io.image.ConvertBufferedImage;
 import boofcv.struct.image.GrayU8;
 import georegression.struct.point.Point2D_F64;
@@ -50,6 +51,9 @@ public class Measure
     }
     
     public FastQueue<EllipseRotated_F64> findEllipses(boolean draw, double threshhold) {
+        image = ImageLoader.colorFilter(image, ImageLoader.setColors(255, 0, 0), 13777210);
+        ShowImages.showWindow(image, "Filtered image", false);
+        
 //        GrayU8 input = ConvertBufferedImage.convertFromSingle(image, null, GrayU8.class);
         GrayU8 input = ConvertBufferedImage.convertFromSingle(image, null, GrayU8.class);
         FastQueue<EllipseRotated_F64> found;
