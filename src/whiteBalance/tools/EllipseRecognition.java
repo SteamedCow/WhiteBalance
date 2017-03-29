@@ -130,7 +130,7 @@ public class EllipseRecognition
         VisualizeShapes.drawEllipse(ellipse, g);
     }
 
-    public double findAverageError(List<Point2D_I32> external, Point2D_I32 center, double[] axis, double angle) {
+    public double findAverageError(List<Point2D_I32> external, EllipseRotated_F64 ellipse) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
     

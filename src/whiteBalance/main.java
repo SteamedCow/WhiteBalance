@@ -26,11 +26,11 @@ import whiteBalance.tools.Measure;
 public class main
 {
     public static void main(String[] args) throws DetectionException {
-        int run = 4;
+        int run = 12;
         boolean calibrate = false;
         int minSize = 3, imgMaxSize = 1000;
         double threshhold = 0.3; //0.165;
-        String filePath = "D:\\Programmer\\NetBeans 8.0.2\\My Javas\\CDIO\\White Balance\\White Balance\\";
+        String filePath = "C:\\Users\\Marti\\Documents\\NetBeansProjects\\WhiteBalance\\";
         
         String fileName;
         
@@ -73,6 +73,7 @@ public class main
                 case 9: fileName = "triangle.jpg"; break;
                 case 10: fileName = "shapes.jpg"; break;
                 case 11: fileName = "20170315_091300 (redigeret).jpg"; break;
+                 case 12: fileName = "cirkel.jpg"; break;
             }
             
             BufferedImage img = ImageLoader.load(filePath + fileName, 900);
