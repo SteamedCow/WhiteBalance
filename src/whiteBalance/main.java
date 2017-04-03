@@ -14,6 +14,7 @@ import georegression.struct.shapes.EllipseRotated_F64;
 import java.awt.image.BufferedImage;
 import whiteBalance.exceptions.DetectionException;
 import gui.ImageViewer;
+import whiteBalance.data.LocalData;
 import whiteBalance.tools.Calibrator;
 import whiteBalance.tools.ImageLoader;
 import whiteBalance.tools.Measure;
@@ -30,7 +31,6 @@ public class main
         boolean calibrate = false;
         int minSize = 3, imgMaxSize = 1000;
         double threshhold = 0.3; //0.165;
-        String filePath = "C:\\Users\\Marti\\Documents\\NetBeansProjects\\WhiteBalance\\";
         
         String fileName;
         
@@ -48,7 +48,7 @@ public class main
                 case 8: fileName = ".jpg"; break;
             }
             
-            Calibrator calib = new Calibrator(filePath + fileName, imgMaxSize, true);
+            Calibrator calib = new Calibrator(LocalData.PROJ_FILE_PATH + fileName, imgMaxSize, true);
             Integer[] colorOffset = calib.calibrate(minSize);
             if(colorOffset != null) {
                 WhiteBalance wb = new WhiteBalance(colorOffset[0], colorOffset[1], colorOffset[2]);
@@ -76,7 +76,7 @@ public class main
                  case 12: fileName = "cirkel.jpg"; break;
             }
             
-            BufferedImage img = ImageLoader.load(filePath + fileName, 900);
+            BufferedImage img = ImageLoader.load(LocalData.PROJ_FILE_PATH + fileName, 900);
             Measure ms = new Measure(img);
             
             EllipseRotated_F64 portal = ms.findMaxEllipse(true, threshhold);

@@ -169,4 +169,25 @@ public class EllipseRecognition
         else
             return angle;
     }
+    
+    public static Point2D_F64[] getPointsOnEllipseFromX(EllipseRotated_F64 ellipse, double xValue) {
+        double a, b, v, cy, x, yPos, yNeg;
+        double alpha, beta, gamma, delta;
+        
+        a = ellipse.a;
+        b = ellipse.b;
+        v = ellipse.phi;
+        cy = ellipse.center.y;
+        x = xValue;
+        
+        alpha = a - b;
+        beta = -a * b * (-alpha * Math.pow(Math.cos(v), 2) + Math.pow(x, 2) - b);
+        gamma = alpha * Math.sin(v) * Math.cos(v) * x;
+        delta = alpha * Math.pow(Math.cos(v), 2) + b;
+        
+        yPos = (Math.sqrt(beta) - gamma) / delta + cy;
+        yNeg = -(Math.sqrt(beta) - gamma) / delta + cy;
+        
+        return new Point2D_F64[]{new Point2D_F64(x, yPos), new Point2D_F64(x, yNeg)};
+    }
 }
