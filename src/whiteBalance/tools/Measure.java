@@ -6,7 +6,6 @@ import boofcv.alg.filter.binary.GThresholdImageOps;
 import boofcv.alg.shapes.ellipse.BinaryEllipseDetector;
 import boofcv.factory.shape.FactoryShapeDetector;
 import boofcv.gui.feature.VisualizeShapes;
-import boofcv.gui.image.ShowImages;
 import boofcv.io.image.ConvertBufferedImage;
 import boofcv.struct.image.GrayU8;
 import georegression.struct.point.Point2D_F64;
@@ -50,14 +49,13 @@ public class Measure
         this(ImageLoader.load(filePath));
     }
     
-    public FastQueue<EllipseRotated_F64> findEllipses(boolean draw, double threshhold) {
-        image = ImageLoader.colorFilter(image, ImageLoader.setColors(255, 0, 0), 13777210);
-        ShowImages.showWindow(image, "Filtered image", false);
+    public FastQueue<EllipseRotated_F64> findEllipses(boolean colorFilter, boolean draw, double threshhold, double minorMin, double majorMin) {
+//        ShowImages.showWindow(image, "Image", true);
+        if(colorFilter)
+            image = ImageLoader.colorFilter(image);
         
 //        GrayU8 input = ConvertBufferedImage.convertFromSingle(image, null, GrayU8.class);
         GrayU8 input = ConvertBufferedImage.convertFromSingle(image, null, GrayU8.class);
-        FastQueue<EllipseRotated_F64> found;
-//        GrayU8 binary = new GrayU8(input.width, input.height);
         GrayU8 binary = new GrayU8(input.width,input.height);
         
         // reduce noise with some filtering
@@ -79,12 +77,14 @@ public class Measure
         // using a sub-pixel algorithm
         detector.process(input, filtered);
         List<Contour> contours = detector.getAllContours();
+        FastQueue<EllipseRotated_F64> foundEllipses = new FastQueue<>(EllipseRotated_F64.class, true);
         g.setStroke(new BasicStroke(1));
         g.setColor(Color.BLUE);
         
-        boolean isCircle = false, isEllipse = false;
+        boolean isEllipse;
         EllipseRecognition eReg;
-//        CircleRecognition cReg;
+        double angle, avgErr;
+        
         for (Contour contour : contours) {
             g.setColor(Color.BLUE);
             g.setStroke(new BasicStroke());
@@ -92,70 +92,38 @@ public class Measure
             
             //Bestem om dette er en oval!
             eReg = new EllipseRecognition();
-//            cReg = new CircleRecognition();
             
             //Find centrum
-//            Point2D_I32 center = cReg.findCenter(contour.external);
             Point2D_F64[] centers = eReg.findCenters(contour.external);
             
-            
             //Find angle
-            double angle = eReg.findAngle(centers, true);
+            angle = eReg.findAngle(centers, true);
             
             //Find avg radius, minor og major
-//            double radius = cReg.findAverageDistance(contour.external, center);
             EllipseRotated_F64 ellipse = eReg.findEllipse(contour.external, centers[0], angle);
-            if(draw) {
-                if((ellipse.a > WBData.MAJOR_MIN || ellipse.b > WBData.MAJOR_MIN) && (ellipse.a > WBData.MINOR_MIN && ellipse.b > WBData.MINOR_MIN)) {
-                    g.setColor(Color.RED);
-                    for (Point2D_F64 center : centers) {
-                        g.fillOval((int) center.x-2, (int) center.y-2, 4, 4);
-                    }
-                    eReg.drawEllipse(ellipse, 2, Color.GREEN, g);
+            if((ellipse.a > majorMin || ellipse.b > majorMin) && (ellipse.a > minorMin && ellipse.b > minorMin)) {
+                //Find gennemsnitlig afvigelse fra cirkel/ellipse
+                avgErr = eReg.findAverageError(contour.external, ellipse);
+                
+                //Determine if the group is an ellipse
+                isEllipse = avgErr / ((ellipse.a+ellipse.b)/2) < threshhold;
+                
+                if(isEllipse){
+                    System.out.println("Found!");
+                    foundEllipses.add(ellipse);
                 }
             }
-            
-            //Find gennemsnitlig afvigelse fra cirkel/ellipse
-//            double avgErr = cReg.findAverageError(contour.external, center, radius);
-//            double avgErr = eReg.findAverageError(contour.external, centers[0], axis, angle);
-            
-            //Determine if the group is a circle
-//            isCircle = avgErr / radius < threshhold;
-//            isEllipse = avgErr / ((axis[0]+axis[1])/2) < threshhold;
-            
-            if(isCircle) {
-                //Tegn svar
-                g.setColor(Color.GREEN);
-                g.setStroke(new BasicStroke(2));
-                
-//                System.out.println("\nlist size = " + contour.external.size());
-//                System.out.println("avgError = " + avgErr);
-//                System.out.println("facError = " + avgErr / radius);
-                
-//                System.out.println("Center = " + center);
-//                g2.fillOval(center.x-2, center.y-2, 4, 4);
-//                g2.drawString("Center", center.x, center.y + 1);
-                
-//                System.out.println("Radius (avg) = " + radius);
-//                g2.drawLine(center.x, center.y, (int) (center.x + radius), center.y);
-//                g2.drawString("Radius", (int) (center.x + radius), center.y + 1);
-                
-//                g2.drawOval((int) (center.x - radius), (int) (center.y - radius), (int) radius * 2, (int) radius * 2);
-            }
         }
+        System.out.println("thresh:" + threshhold);
         
-        // Find the contour around the shapes
-//        found = detector.getFoundEllipses();
+        if(draw)
+            drawEllipses(foundEllipses, 2, Color.GREEN);
         
-//        if(draw)
-//            drawEllipses(found, 2);
-        
-        return null;
-//        return found;
+        return foundEllipses;
     }
     
-    public FastQueue<EllipseRotated_F64> findEllipses(int minSize, boolean draw, double threshhold) {
-        FastQueue<EllipseRotated_F64> found = findEllipses(false, threshhold);
+    public FastQueue<EllipseRotated_F64> findEllipses(boolean colorFilter, int minSize, boolean draw, double threshhold, double minorMin, double majorMin) {
+        FastQueue<EllipseRotated_F64> found = findEllipses(colorFilter, draw, threshhold, minorMin, majorMin);
         
         if(found.size > 4 && minSize > 0) {
             ArrayList<Integer> removeList = new ArrayList<>();
@@ -173,13 +141,13 @@ public class Measure
         }
         
         if(draw) {
-            drawEllipses(found, 2);
+            drawEllipses(found, 2, Color.RED);
         }
         return found;
     }
     
-    public EllipseRotated_F64 findMaxEllipse(boolean draw, double threshhold) {
-        FastQueue<EllipseRotated_F64> found = findEllipses(true, threshhold);
+    public EllipseRotated_F64 findMaxEllipse(boolean colorFilter, boolean draw, double threshhold, double minorMin, double majorMin) {
+        FastQueue<EllipseRotated_F64> found = findEllipses(colorFilter, draw, threshhold, minorMin, majorMin);
         
         if(found != null) {
             EllipseRotated_F64 ellipse, portal = null;
@@ -206,9 +174,9 @@ public class Measure
         return null;
     }
     
-    private void drawEllipses(FastQueue<EllipseRotated_F64> ellipses, float strokeWidth) {
+    private void drawEllipses(FastQueue<EllipseRotated_F64> ellipses, float strokeWidth, Color c) {
         g.setStroke(new BasicStroke(strokeWidth));
-        g.setColor(Color.RED);
+        g.setColor(c);
         
         for (int i = 0; i < ellipses.size; i++)
             VisualizeShapes.drawEllipse(ellipses.get(i), g);

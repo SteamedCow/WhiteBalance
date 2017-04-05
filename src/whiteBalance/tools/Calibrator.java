@@ -7,6 +7,7 @@ import georegression.struct.shapes.EllipseRotated_F64;
 import java.awt.image.BufferedImage;
 import java.util.Arrays;
 import org.ddogleg.struct.FastQueue;
+import whiteBalance.data.WBData;
 import whiteBalance.exceptions.DetectionException;
 import whiteBalance.exceptions.Dialog;
 
@@ -35,14 +36,14 @@ public class Calibrator
         measure = new Measure(filePath, imageMaxSize);
     }
     
-    public Integer[] calibrate(int ellipseMinSize) throws DetectionException {
+    public Integer[] calibrate(int ellipseMinSize, double minorMin, double majorMin) throws DetectionException {
         if(verbose)
             System.out.println("White balance calibration started.. verbose=" + verbose);
         
         //Find ellipses (over ellipseMinSize)
         if(verbose)
             System.out.println("Finding ellipses..");
-        FastQueue<EllipseRotated_F64> ellipses = measure.findEllipses(ellipseMinSize, true, 0.165);
+        FastQueue<EllipseRotated_F64> ellipses = measure.findEllipses(false, true, WBData.ellipseThresh, ellipseMinSize, ellipseMinSize);
         if(verbose)
             System.out.println("    Found " + ellipses.size + " items: " + Arrays.toString(ellipses.getData()));
         

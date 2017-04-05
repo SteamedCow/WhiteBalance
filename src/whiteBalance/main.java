@@ -15,6 +15,7 @@ import java.awt.image.BufferedImage;
 import whiteBalance.exceptions.DetectionException;
 import gui.ImageViewer;
 import whiteBalance.data.LocalData;
+import whiteBalance.data.WBData;
 import whiteBalance.tools.Calibrator;
 import whiteBalance.tools.ImageLoader;
 import whiteBalance.tools.Measure;
@@ -27,10 +28,10 @@ import whiteBalance.tools.Measure;
 public class main
 {
     public static void main(String[] args) throws DetectionException {
-        int run = 12;
+        int run = 14;
         boolean calibrate = false;
         int minSize = 3, imgMaxSize = 1000;
-        double threshhold = 0.3; //0.165;
+        double threshhold = WBData.ellipseThresh; //0.165;
         
         String fileName;
         
@@ -49,7 +50,7 @@ public class main
             }
             
             Calibrator calib = new Calibrator(LocalData.PROJ_FILE_PATH + fileName, imgMaxSize, true);
-            Integer[] colorOffset = calib.calibrate(minSize);
+            Integer[] colorOffset = calib.calibrate(minSize, minSize, minSize);
             if(colorOffset != null) {
                 WhiteBalance wb = new WhiteBalance(colorOffset[0], colorOffset[1], colorOffset[2]);
                 wb.colorImage(calib.getImage());
@@ -73,13 +74,15 @@ public class main
                 case 9: fileName = "triangle.jpg"; break;
                 case 10: fileName = "shapes.jpg"; break;
                 case 11: fileName = "20170315_091300 (redigeret).jpg"; break;
-                 case 12: fileName = "cirkel.jpg"; break;
+                case 12: fileName = "cirkel.jpg"; break;
+                case 13: fileName = "Frank ellipse.jpg"; break;
+                case 14: fileName = "Drone.jpg"; break;
             }
             
             BufferedImage img = ImageLoader.load(LocalData.PROJ_FILE_PATH + fileName, 900);
             Measure ms = new Measure(img);
             
-            EllipseRotated_F64 portal = ms.findMaxEllipse(true, threshhold);
+            EllipseRotated_F64 portal = ms.findMaxEllipse(true, true, threshhold, WBData.MINOR_MIN, WBData.MAJOR_MIN);
             
 //            Point3D coordsToPortal = new Navigator().flyToPortal(portal, img, true);
 //            System.out.println(coordsToPortal);

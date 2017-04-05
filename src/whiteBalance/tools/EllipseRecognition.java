@@ -129,32 +129,23 @@ public class EllipseRecognition
         g.setColor(color);
         VisualizeShapes.drawEllipse(ellipse, g);
     }
-
-    public double findAverageError(List<Point2D_I32> external, EllipseRotated_F64 ellipse) {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
     
-    public double findAverageError(List<Point2D_I32> contour, Point2D_I32 center, double minor, double major) {
-        double err = -1;
+    public double findAverageError(List<Point2D_I32> contour, EllipseRotated_F64 ellipse) {
+        Point2D_I32[] expP;
+        double err, sumErr = 0;
         
-        return err;
-//        Point2D_I32 expP1, expP2;
-//        double err, sumErr = 0, expY1, expY2;
-//        
-//        for (Point2D_I32 p : contour) {
-//            expY1 = Math.sqrt(radius*radius - p.x*p.x + 2*center.x*p.x - center.x*center.x) + center.y;
-//            expY2 = -(Math.sqrt(radius*radius - p.x*p.x + 2*center.x*p.x - center.x*center.x) - center.y);
-//            expP1 = new Point2D_I32(p.x, (int) expY1);
-//            expP2 = new Point2D_I32(p.x, (int) expY2);
-//            
-//            if(p.distance(expP1) < p.distance(expP2))
-//                err = p.distance(expP1);
-//            else
-//                err = p.distance(expP2);
-//            
-//            sumErr += err;
-//        }
-//        return sumErr / contour.size();
+        for (Point2D_I32 p : contour) {
+            expP = getPointsOnEllipseFromX(ellipse, p.x);
+            
+            if(p.distance(expP[0]) < p.distance(expP[1]))
+                err = p.distance(expP[0]);
+            else
+                err = p.distance(expP[1]);
+            
+            sumErr += err;
+        }
+        
+        return sumErr / contour.size();
     }
     
     private double angleBetween(Point2D_F64 p1, Point2D_F64 p2, boolean degrees) {
@@ -170,7 +161,7 @@ public class EllipseRecognition
             return angle;
     }
     
-    public static Point2D_F64[] getPointsOnEllipseFromX(EllipseRotated_F64 ellipse, double xValue) {
+    public static Point2D_I32[] getPointsOnEllipseFromX(EllipseRotated_F64 ellipse, double xValue) {
         double a, b, v, cy, x, yPos, yNeg;
         double alpha, beta, gamma, delta;
         
@@ -188,6 +179,6 @@ public class EllipseRecognition
         yPos = (Math.sqrt(beta) - gamma) / delta + cy;
         yNeg = -(Math.sqrt(beta) - gamma) / delta + cy;
         
-        return new Point2D_F64[]{new Point2D_F64(x, yPos), new Point2D_F64(x, yNeg)};
+        return new Point2D_I32[]{new Point2D_I32((int) x, (int) yPos), new Point2D_I32((int) x, (int) yNeg)};
     }
 }
