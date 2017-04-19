@@ -6,6 +6,7 @@ import boofcv.alg.filter.binary.GThresholdImageOps;
 import boofcv.alg.shapes.ellipse.BinaryEllipseDetector;
 import boofcv.factory.shape.FactoryShapeDetector;
 import boofcv.gui.feature.VisualizeShapes;
+import boofcv.gui.image.ShowImages;
 import boofcv.io.image.ConvertBufferedImage;
 import boofcv.struct.image.GrayU8;
 import georegression.struct.point.Point2D_F64;
@@ -49,9 +50,9 @@ public class Measure
         this(ImageLoader.load(filePath));
     }
     
-    public FastQueue<EllipseRotated_F64> findEllipses(boolean colorFilter, boolean draw, double threshhold, double minorMin, double majorMin) {
+    public FastQueue<EllipseRotated_F64> findEllipses(boolean draw, double threshhold, double minorMin, double majorMin, boolean wb) {
 //        ShowImages.showWindow(image, "Image", true);
-        if(colorFilter)
+        if(!wb)
             image = ImageLoader.colorFilter(image);
         
 //        GrayU8 input = ConvertBufferedImage.convertFromSingle(image, null, GrayU8.class);
@@ -69,7 +70,7 @@ public class Measure
 //        ThresholdImageOps.threshold(input, filtered, threshold, true);
 //        filtered = GThresholdImageOps.localSauvola(input, filtered, 5, 0.30f, true); //Sauvola
 //        filtered = GThresholdImageOps.localBlockMinMax(input, binary, 5, 0.48, true, 5); //Block
-        filtered = GThresholdImageOps.localGaussian(input, binary, 15, 0.4, true, null, null); //Gaussian
+        filtered = GThresholdImageOps.localGaussian(input, binary, 50, 0.4, true, null, null); //Gaussian
 //        filtered = GThresholdImageOps.localSquare(input, binary, 75, .35, true, null, null); //Square
         
         // it takes in a grey scale image and binary image
@@ -77,44 +78,14 @@ public class Measure
         // using a sub-pixel algorithm
         detector.process(input, filtered);
         List<Contour> contours = detector.getAllContours();
-        FastQueue<EllipseRotated_F64> foundEllipses = new FastQueue<>(EllipseRotated_F64.class, true);
+        FastQueue<EllipseRotated_F64> foundEllipses;
         g.setStroke(new BasicStroke(1));
         g.setColor(Color.BLUE);
         
-        boolean isEllipse;
-        EllipseRecognition eReg;
-        double angle, avgErr;
-        
-        for (Contour contour : contours) {
-            g.setColor(Color.BLUE);
-            g.setStroke(new BasicStroke());
-            VisualizeShapes.drawPolygon(contour.external, true, g);
-            
-            //Bestem om dette er en oval!
-            eReg = new EllipseRecognition();
-            
-            //Find centrum
-            Point2D_F64[] centers = eReg.findCenters(contour.external);
-            
-            //Find angle
-            angle = eReg.findAngle(centers, true);
-            
-            //Find avg radius, minor og major
-            EllipseRotated_F64 ellipse = eReg.findEllipse(contour.external, centers[0], angle);
-            if((ellipse.a > majorMin || ellipse.b > majorMin) && (ellipse.a > minorMin && ellipse.b > minorMin)) {
-                //Find gennemsnitlig afvigelse fra cirkel/ellipse
-                avgErr = eReg.findAverageError(contour.external, ellipse);
-                
-                //Determine if the group is an ellipse
-                isEllipse = avgErr / ((ellipse.a+ellipse.b)/2) < threshhold;
-                
-                if(isEllipse){
-                    System.out.println("Found!");
-                    foundEllipses.add(ellipse);
-                }
-            }
-        }
-        System.out.println("thresh:" + threshhold);
+        if(wb)
+            foundEllipses = detector.getFoundEllipses();
+        else
+            foundEllipses = new EllipseRecognition().findEllipses(contours, minorMin, majorMin, threshhold, true, g);
         
         if(draw)
             drawEllipses(foundEllipses, 2, Color.GREEN);
@@ -122,8 +93,8 @@ public class Measure
         return foundEllipses;
     }
     
-    public FastQueue<EllipseRotated_F64> findEllipses(boolean colorFilter, int minSize, boolean draw, double threshhold, double minorMin, double majorMin) {
-        FastQueue<EllipseRotated_F64> found = findEllipses(colorFilter, draw, threshhold, minorMin, majorMin);
+    public FastQueue<EllipseRotated_F64> findEllipses(int minSize, boolean draw, double threshhold, double minorMin, double majorMin, boolean wb) {
+        FastQueue<EllipseRotated_F64> found = findEllipses(draw, threshhold, minorMin, majorMin, wb);
         
         if(found.size > 4 && minSize > 0) {
             ArrayList<Integer> removeList = new ArrayList<>();
@@ -140,14 +111,14 @@ public class Measure
             }
         }
         
-        if(draw) {
+        if(draw)
             drawEllipses(found, 2, Color.RED);
-        }
+        
         return found;
     }
     
-    public EllipseRotated_F64 findMaxEllipse(boolean colorFilter, boolean draw, double threshhold, double minorMin, double majorMin) {
-        FastQueue<EllipseRotated_F64> found = findEllipses(colorFilter, draw, threshhold, minorMin, majorMin);
+    public EllipseRotated_F64 findMaxEllipse(boolean draw, double threshhold, double minorMin, double majorMin, boolean wb) {
+        FastQueue<EllipseRotated_F64> found = findEllipses(false, threshhold, minorMin, majorMin, wb);
         
         if(found != null) {
             EllipseRotated_F64 ellipse, portal = null;
@@ -164,7 +135,7 @@ public class Measure
             
             if(draw) {
                 g.setStroke(new BasicStroke(2));
-                g.setColor(Color.RED);
+                g.setColor(Color.GREEN);
                 
                 if(portal != null)
                     VisualizeShapes.drawEllipse(portal, g);
@@ -223,7 +194,7 @@ public class Measure
         }
         
         g.setStroke(new BasicStroke(3));
-        g.setColor(Color.GREEN);
+        g.setColor(Color.RED);
         EllipseRotated_F64 caliPoint;
         for (int i = 0; i < corners.length; i++) {
             caliPoint = corners[i];

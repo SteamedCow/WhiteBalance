@@ -43,7 +43,7 @@ public class Calibrator
         //Find ellipses (over ellipseMinSize)
         if(verbose)
             System.out.println("Finding ellipses..");
-        FastQueue<EllipseRotated_F64> ellipses = measure.findEllipses(false, true, WBData.ellipseThresh, ellipseMinSize, ellipseMinSize);
+        FastQueue<EllipseRotated_F64> ellipses = measure.findEllipses(true, WBData.ellipseThresh, ellipseMinSize, ellipseMinSize, true);
         if(verbose)
             System.out.println("    Found " + ellipses.size + " items: " + Arrays.toString(ellipses.getData()));
         
@@ -80,7 +80,7 @@ public class Calibrator
             }
         }
         else {
-            ShowImages.showWindow(measure.getImage(), "Corners Conflict", true);
+            ShowImages.showWindow(measure.getImage(), "Corners Conflict", false);
             if(verbose)
                 System.out.println("Corners Conflict.. Aborted");
             return null;

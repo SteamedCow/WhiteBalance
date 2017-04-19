@@ -1,5 +1,6 @@
 package whiteBalance.tools;
 
+import boofcv.alg.filter.binary.Contour;
 import boofcv.gui.feature.VisualizeShapes;
 import georegression.struct.point.Point2D_F64;
 import georegression.struct.point.Point2D_I32;
@@ -7,7 +8,11 @@ import georegression.struct.shapes.EllipseRotated_F64;
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Graphics2D;
+import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+import javafx.scene.chart.PieChart;
+import org.ddogleg.struct.FastQueue;
 import whiteBalance.tools.geom.DFMPoint2D_I32;
 
 /**
@@ -17,6 +22,45 @@ import whiteBalance.tools.geom.DFMPoint2D_I32;
  */
 public class EllipseRecognition 
 {
+    public FastQueue<EllipseRotated_F64> findEllipses(Iterable<Contour> contours, double minorMin, double majorMin, double errThreshold, boolean drawConture, Graphics2D g) {
+        FastQueue<EllipseRotated_F64> foundEllipses = new FastQueue<>(EllipseRotated_F64.class, true);
+        boolean isEllipse;
+        EllipseRecognition eReg;
+        double angle, avgErr;
+        
+        g.setColor(Color.BLUE);
+        g.setStroke(new BasicStroke());
+        for (Contour contour : contours) {
+            VisualizeShapes.drawPolygon(contour.external, true, g);
+            
+            //Bestem om dette er en oval!
+            eReg = new EllipseRecognition();
+            
+            //Find centrum
+            Point2D_F64[] centers = eReg.findCenters(contour.external);
+            
+            //Find angle
+            angle = eReg.findAngle(centers, true);
+            
+            //Find avg radius, minor og major
+            EllipseRotated_F64 ellipse = eReg.findEllipse(contour.external, centers[0], angle);
+            if((ellipse.a > majorMin || ellipse.b > majorMin) && (ellipse.a > minorMin && ellipse.b > minorMin)) {
+                //Find gennemsnitlig afvigelse fra cirkel/ellipse
+                avgErr = eReg.findAverageError(contour.external, ellipse);
+                
+                //Determine if the group is an ellipse
+                isEllipse = avgErr / ((ellipse.a+ellipse.b)/2) < errThreshold;
+                
+                if(isEllipse) {
+                    System.out.println(isEllipse + ": " + new Date().getSeconds());
+                    foundEllipses.add(ellipse);
+                }
+            }
+        }
+        
+        return foundEllipses;
+    }
+    
     public Point2D_F64[] findCenters(List<Point2D_I32> contour) {
         DFMPoint2D_I32[] centers = new DFMPoint2D_I32[5];
         

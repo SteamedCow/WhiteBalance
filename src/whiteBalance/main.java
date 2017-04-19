@@ -28,7 +28,7 @@ import whiteBalance.tools.Measure;
 public class main
 {
     public static void main(String[] args) throws DetectionException {
-        int run = 14;
+        int run = 15;
         boolean calibrate = false;
         int minSize = 3, imgMaxSize = 1000;
         double threshhold = WBData.ellipseThresh; //0.165;
@@ -77,12 +77,14 @@ public class main
                 case 12: fileName = "cirkel.jpg"; break;
                 case 13: fileName = "Frank ellipse.jpg"; break;
                 case 14: fileName = "Drone.jpg"; break;
+                case 15: fileName = "portal med wb.jpg"; break;
+                case 16: fileName = "portaler.jpg"; break;
             }
             
             BufferedImage img = ImageLoader.load(LocalData.PROJ_FILE_PATH + fileName, 900);
             Measure ms = new Measure(img);
             
-            EllipseRotated_F64 portal = ms.findMaxEllipse(true, true, threshhold, WBData.MINOR_MIN, WBData.MAJOR_MIN);
+            EllipseRotated_F64 portal = ms.findMaxEllipse(true, threshhold, WBData.MINOR_MIN, WBData.MAJOR_MIN, false);
             
 //            Point3D coordsToPortal = new Navigator().flyToPortal(portal, img, true);
 //            System.out.println(coordsToPortal);

@@ -62,8 +62,8 @@ public class ImageLoader
                 Color.RGBtoHSB(col.getRed(), col.getGreen(), col.getBlue(), hsb);
                 
                 float deg = hsb[0] * 360;
-                if (hsb[1] > 0.1 && hsb[2] < 0.6 && hsb[2] > 0.35)
-                    if ((deg >=   0 && deg <  30) || (deg >= 330 && deg < 360))
+                if (hsb[1] > 0.2 && hsb[2] < 0.8 && hsb[2] > 0.1)
+                    if ((deg >=   0 && deg <  20) || (deg >= 330 && deg < 360))
                         image.setRGB(x, y, 0);
                     else
                         image.setRGB(x, y, 16777214);
